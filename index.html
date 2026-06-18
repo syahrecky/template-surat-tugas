@@ -502,7 +502,7 @@
               <input
                 type="text"
                 id="namaPenugas"
-                placeholder="Contoh: Syahrecky Hidayat Irawan"
+                placeholder="Contoh: Syahrecky Hidayat"
                 value="Salshabilla Aliza Adif"
                 required
               />
@@ -521,7 +521,7 @@
               <input
                 type="text"
                 id="jabatanPenugas"
-                placeholder="Contoh: Pembimbing Masa Depanmu"
+                placeholder="Contoh: Pembimbing Kemasyarakatan Pertama"
                 value="Pembimbing Kemasyarakatan Pertama"
                 required
               />
@@ -562,7 +562,7 @@
               <input
                 type="text"
                 id="lokasi"
-                placeholder="Contoh: Semarang, Jawa Tengah atau Surabaya,  Jawa Timur"
+                placeholder="Contoh: Lapas Klaten"
                 required
               />
             </div>
@@ -758,7 +758,7 @@
       }
 
       // Terapkan ke semua elemen yang dibutuhkan
-      ["namaClient", "namaPenugas"].forEach((id) => {
+      ["namaClient", "namaPenugas", "jabatanPenugas", "lokasi"].forEach((id) => {
         document.getElementById(id).addEventListener("input", applyTitleCase);
       });
 
