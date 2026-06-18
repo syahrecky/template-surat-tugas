@@ -748,22 +748,19 @@
     </div>
 
     <script>
-      // Memastikan setiap input pada #namaClient otomatis menjadi Title Case
-      document
-        .getElementById("namaClient")
-        .addEventListener("input", function (e) {
-          let posisiKursor = this.selectionStart;
+      // Fungsi Title Case reusable
+      function applyTitleCase(e) {
+        const pos = this.selectionStart;
+        this.value = this.value
+          .toLowerCase()
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+        this.setSelectionRange(pos, pos);
+      }
 
-          // Fungsi untuk mengubah teks menjadi Capitalize Each Word
-          let teks = this.value.toLowerCase().replace(/\b\w/g, function (l) {
-            return l.toUpperCase();
-          });
-
-          this.value = teks;
-
-          // Mengembalikan posisi kursor agar tidak loncat ke akhir teks saat mengetik di tengah
-          this.setSelectionRange(posisiKursor, posisiKursor);
-        });
+      // Terapkan ke semua elemen yang dibutuhkan
+      ["namaClient", "namaPenugas"].forEach((id) => {
+        document.getElementById(id).addEventListener("input", applyTitleCase);
+      });
 
       const list_jenis_surat = [
         {
