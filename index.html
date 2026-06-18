@@ -936,17 +936,31 @@
    ========================================================= */
       async function generateDocxBlob(d) {
         const zip = await JSZip.loadAsync(DOCX_BASE64, { base64: true });
-
+      
         let xml = await zip.file("word/document.xml").async("string");
-
+      
         const tanggal = formatTanggalPanjang(d.tanggal_raw, true);
         const tanggalDibuat = formatTanggalPanjang(d.tanggal_dibuat_raw, false);
-
+      
+        // --- Penanganan khusus: nama_client harus BOLD ---
+        // Placeholder ${nama_client} berada di tengah run yang sama dengan
+        // teks lain ("...${melaksanakan} ${nama_client} pada:"). Untuk membuat
+        // HANYA nama klien menjadi bold, run dipecah: tutup <w:t>/<w:r> sebelum
+        // nama, sisipkan run baru ber-bold, lalu buka kembali run berikutnya.
+        const clientBoldXml =
+          "</w:t></w:r>" +
+          "<w:r><w:rPr><w:b/><w:bCs/></w:rPr>" +
+          '<w:t xml:space="preserve">' +
+          escapeXml(d.nama_client) +
+          "</w:t></w:r>" +
+          '<w:r><w:t xml:space="preserve">';
+        xml = xml.split("${nama_client}").join(clientBoldXml);
+      
+        // --- Placeholder biasa (tanpa format khusus) ---
         const map = {
           "${nama_penugas}": d.nama_penugas,
           "${nip_penugas}": d.nip_penugas,
           "${jabatan_penugas}": d.jabatan_penugas,
-          "${nama_client}": d.nama_client,
           "${tanggal}": tanggal,
           "${lokasi}": d.lokasi,
           "${tanggal_dibuat}": tanggalDibuat,
@@ -960,7 +974,7 @@
         for (const tag of keys) {
           xml = xml.split(tag).join(escapeXml(map[tag]));
         }
-
+      
         zip.file("word/document.xml", xml);
         return zip.generateAsync({
           type: "blob",
