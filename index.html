@@ -762,6 +762,20 @@
         document.getElementById(id).addEventListener("input", applyTitleCase);
       });
 
+      document.getElementById("btnPrint").addEventListener("click", () => {
+        const d = getFormData();
+        const judulAsli = document.title;
+        const namaFile =
+          `Surat_Tugas_${slugify(getJenisLabel(d.jenis_surat))}` +
+          `_${slugify(d.nama_penugas) || "tugas"}`;
+        document.title = namaFile;
+        window.print();
+        // Kembalikan judul setelah dialog print ditutup
+        setTimeout(() => {
+          document.title = judulAsli;
+        }, 1000);
+      });
+
       const list_jenis_surat = [
         {
           jenis: 1,
@@ -843,6 +857,13 @@
         const has = value && String(value).trim().length > 0;
         el.textContent = has ? value : fallback;
         el.classList.toggle("empty", !has);
+      }
+
+      function getJenisLabel(jenisVal) {
+        const opt = document.querySelector(
+          `#jenisSurat option[value="${jenisVal}"]`,
+        );
+        return opt ? opt.textContent.trim() : "";
       }
 
       function getFormData() {
@@ -1012,7 +1033,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `Surat_Tugas_${slugify(d.nama_penugas) || "tugas"}.docx`;
+            a.download = `Surat Tugas-${slugify(getJenisLabel(d.jenis_surat))}` + ` ${slugify(d.nama_penugas) || "tugas"}.docx`;
             document.body.appendChild(a);
             a.click();
             a.remove();
