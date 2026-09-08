@@ -825,6 +825,23 @@
         { nip: "198404272012121002", nama: "Eles Ronggo Priyo Hernowo" },
         { nip: "197005071990032001", nama: "Mei Rinawati Isti Handayani" },
       ];
+
+      const NOMOR_PER_JENIS = {
+        "1": "WP13.PAS.53.PK.07.01-",
+        "2": "WP13.PAS.53.PK.07.01-",
+        "3": "WP13.PAS.53.PK.07.01-",
+        "4": "WP13.PAS.53.PK.07.01-",
+        "5": "WP13.PAS.53.PK.07.01-",
+        "6": "WP13.PAS.53.PK.07.03-",
+      };
+
+      const DEFAULT_NOMOR = "WP13.PAS.53.PK.07.01-";
+
+      document.getElementById("jenisSurat").addEventListener("change", function () {
+        const nomorInput = document.getElementById("nomorSurat");
+        nomorInput.value = NOMOR_PER_JENIS[this.value] || DEFAULT_NOMOR;
+        updatePreview();
+      });
     </script>
 
     <script>
