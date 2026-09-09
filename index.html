@@ -1066,7 +1066,7 @@
             const formattedDate = String(today.getDate()).padStart(2, '0') + String(today.getMonth() + 1).padStart(2, '0') + today.getFullYear();
             
             a.href = url;
-            a.download = `Surat_Tugas_${slugify(getJenisLabel(d.jenis_surat))}_${slugify(d.nama_penugas) \vert{}\vert{} "tugas"}_${formattedDate}.docx`;
+            a.download = `Surat_Tugas_${slugify(getJenisLabel(d.jenis_surat))}_${slugify(d.nama_penugas || "tugas")}_${formattedDate}.docx`;
             document.body.appendChild(a);
             a.click();
             a.remove();
