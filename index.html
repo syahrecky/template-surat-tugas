@@ -297,25 +297,6 @@
         flex-direction: column;
         align-items: center;
       }
-      .preview-toolbar {
-        width: 100%;
-        max-width: 215.9mm;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 14px;
-        color: rgba(255, 255, 255, 0.65);
-        font-size: 12.5px;
-      }
-      .preview-toolbar .dot {
-        display: inline-block;
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--good);
-        margin-right: 6px;
-        box-shadow: 0 0 0 3px rgba(47, 122, 79, 0.25);
-      }
       .paper-outer {
         width: 100%;
         max-width: 215.9mm;
@@ -469,7 +450,6 @@
           padding: 26px 0 48px;
         }
         /* Jangan biarkan kertas menyusut mengikuti tinggi kolom */
-        .preview-toolbar,
         .paper-outer {
           flex: none;
         }
@@ -671,6 +651,47 @@
         }
       }
 
+      /* ---------- Checkbox "samakan data petugas" ---------- */
+      .follow-prev {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 44px;
+        margin: 4px 0 2px;
+        padding: 8px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        cursor: pointer;
+      }
+      .follow-prev[hidden] {
+        display: none;
+      }
+      .follow-prev input {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        flex: none;
+        accent-color: var(--maroon);
+        cursor: pointer;
+      }
+      .follow-prev:has(input:checked) {
+        border-color: var(--maroon);
+        background: rgba(139, 46, 53, 0.06);
+      }
+      .follow-prev:has(input:focus-visible) {
+        outline: 2px solid var(--maroon);
+        outline-offset: 2px;
+      }
+      input.linked {
+        background: #f1efe8;
+        color: var(--muted);
+        cursor: not-allowed;
+      }
+
       /* ---------- Multi halaman ---------- */
       .page-tabs {
         display: flex;
@@ -794,7 +815,6 @@
         }
         .topbar,
         .main > div.form-col,
-        .preview-toolbar,
         .tabs,
         .mobile-fab,
         .paper-edit,
@@ -886,6 +906,11 @@
               <p class="hint">
                 Diisi sesuai data pegawai yang melaksanakan tugas.
               </p>
+
+              <label class="follow-prev" id="ikutiPetugasWrap" hidden>
+                <input type="checkbox" id="ikutiPetugas" />
+                <span id="ikutiPetugasText">Samakan dengan data petugas Surat 1</span>
+              </label>
 
               <label>Nama lengkap <span class="req">*</span></label>
               <input
@@ -1019,10 +1044,6 @@
       </div>
 
       <div class="preview-panel panel-hidden-mobile" id="previewCol">
-        <div class="preview-toolbar">
-          <span><span class="dot"></span>Pratinjau langsung — ukuran Legal (8,5 × 14 in) · <span id="pageCountLabel">1 halaman</span></span>
-          <span id="zoomLabel"></span>
-        </div>
         <div class="paper-outer" id="paperOuter">
           <div class="paper-stack" id="paperStack"></div>
         </div>
@@ -1338,6 +1359,8 @@
           data[id] = "";
         });
         data.tanggalDibuat = hariIni;
+        data.nomorSurat = DEFAULT_NOMOR; // nomor surat tidak dikosongkan
+        data.ikutiPetugas = false;
         return data;
       }
 
@@ -1364,20 +1387,83 @@
       const pages = [defaultPage()];
       let activePage = 0;
 
+      /* ---- Data petugas yang mengikuti halaman sebelumnya ----
+         Bila ikutiPetugas = true, nama/NIP/jabatan halaman itu terkunci
+         dan selalu disamakan dengan halaman tepat sebelumnya (berantai:
+         Surat 3 ikut Surat 2 yang ikut Surat 1). */
+      const PETUGAS_IDS = ["namaPenugas", "nipPenugas", "jabatanPenugas"];
+
+      function syncLinkedPetugas() {
+        for (let i = 1; i < pages.length; i++) {
+          if (!pages[i].ikutiPetugas) continue;
+          PETUGAS_IDS.forEach((id) => {
+            pages[i][id] = pages[i - 1][id] || "";
+          });
+        }
+        if (pages[0]) pages[0].ikutiPetugas = false;
+      }
+
+      function applyLinkedState(index) {
+        const wrap = document.getElementById("ikutiPetugasWrap");
+        const box = document.getElementById("ikutiPetugas");
+        const linked = index > 0 && !!pages[index].ikutiPetugas;
+        wrap.hidden = index === 0;
+        box.checked = linked;
+        document.getElementById("ikutiPetugasText").textContent =
+          `Samakan dengan data petugas Surat 1`;
+        PETUGAS_IDS.forEach((id) => {
+          const el = document.getElementById(id);
+          el.readOnly = linked;
+          el.classList.toggle("linked", linked);
+          el.title = linked
+            ? `Mengikuti Surat ${index}. Hilangkan centang untuk mengisi sendiri.`
+            : "";
+        });
+      }
+
       function saveActivePage() {
-        const data = {};
+        const data = { ...pages[activePage] };
         FIELD_IDS.forEach((id) => {
           data[id] = document.getElementById(id).value;
         });
         pages[activePage] = data;
+        syncLinkedPetugas();
+        // Halaman aktif yang terhubung: tampilkan nilai hasil sinkron
+        if (pages[activePage].ikutiPetugas) {
+          PETUGAS_IDS.forEach((id) => {
+            document.getElementById(id).value = pages[activePage][id];
+          });
+        }
       }
 
       function loadPageIntoForm(index) {
+        syncLinkedPetugas();
         const data = pages[index];
         FIELD_IDS.forEach((id) => {
           document.getElementById(id).value = data[id] || "";
         });
+        applyLinkedState(index);
       }
+
+      document.getElementById("ikutiPetugas").addEventListener("change", (e) => {
+        if (activePage === 0) return;
+        const on = e.target.checked;
+        pages[activePage].ikutiPetugas = on;
+        if (on) {
+          syncLinkedPetugas();
+        } else {
+          // Centang dilepas: data petugas dikosongkan lagi
+          PETUGAS_IDS.forEach((id) => {
+            pages[activePage][id] = "";
+          });
+        }
+        PETUGAS_IDS.forEach((id) => {
+          document.getElementById(id).value = pages[activePage][id];
+        });
+        applyLinkedState(activePage);
+        if (!on) document.getElementById("namaPenugas").focus();
+        // updatePreview() berjalan lewat listener input/change pada form
+      });
 
       function isPageComplete(data) {
         return FIELD_IDS.every((id) => String(data[id] || "").trim() !== "");
@@ -1489,8 +1575,6 @@
         pages.forEach((raw, i) => {
           fillPaper(paperStack.children[i], getFormData(raw), i);
         });
-        document.getElementById("pageCountLabel").textContent =
-          pages.length + " halaman";
         scalePaper();
       }
 
@@ -1546,13 +1630,11 @@
         saveActivePage();
         renderPreview();
         // Perbarui tanda "belum lengkap" tanpa membangun ulang tab
+        // (semua tab, karena halaman terhubung bisa ikut berubah)
         const tabs = document.querySelectorAll("#pageTabs .page-tab");
-        if (tabs[activePage]) {
-          tabs[activePage].classList.toggle(
-            "incomplete",
-            !isPageComplete(pages[activePage]),
-          );
-        }
+        pages.forEach((data, i) => {
+          if (tabs[i]) tabs[i].classList.toggle("incomplete", !isPageComplete(data));
+        });
       }
 
       function switchPage(index) {
@@ -1682,8 +1764,6 @@
         paperStack.style.transform = `scale(${scale})`;
         paperStack.style.setProperty("--ui-scale", String(1 / scale));
         outer.style.height = paperStack.getBoundingClientRect().height + "px";
-        document.getElementById("zoomLabel").textContent =
-          scale < 1 ? Math.round(scale * 100) + "% tampilan" : "";
       }
       window.addEventListener("resize", scalePaper);
 
@@ -1805,7 +1885,7 @@
         const first = getFormData(pages[0]);
         const nama = slugify(first.nama_penugas) || "tugas";
         if (pages.length > 1) {
-          return `Surat_Tugas_${pages.length}_halaman_${nama}`;
+          return `Surat_Tugas_Multipage_${nama}`;
         }
         return `Surat_Tugas_${slugify(getJenisLabel(first.jenis_surat))}_${nama}`;
       }
