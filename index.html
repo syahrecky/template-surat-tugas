@@ -89,14 +89,16 @@
       }
       @media (max-width: 960px) {
         .main {
-          grid-template-columns: 1fr;
+          /* minmax(0, 1fr): kolom tidak melebar mengikuti lebar kertas 816px */
+          grid-template-columns: minmax(0, 1fr);
           padding: 18px 16px 48px;
         }
-        .tabs {
-          display: flex;
+        .form-col,
+        .preview-panel {
+          min-width: 0;
         }
         .panel-hidden-mobile {
-          display: none;
+          display: none !important;
         }
       }
 
@@ -427,6 +429,248 @@
         font-style: italic;
       }
 
+      /* ---------- Desktop: formulir & pratinjau digulir terpisah ----------
+         Halaman web tidak bergulir; kolom formulir dan kolom pratinjau
+         masing-masing punya area gulir sendiri, sehingga formulir tetap
+         di tempat saat pratinjau berpindah ke halaman lain. */
+      @media (min-width: 961px) {
+        body {
+          height: 100vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+        .topbar {
+          flex: none;
+        }
+        .main {
+          flex: 1 1 auto;
+          min-height: 0;
+          grid-template-columns: 432px 1fr;
+          grid-template-rows: minmax(0, 1fr);
+          align-items: stretch;
+          gap: 10px;
+          padding: 0 32px 0 16px;
+        }
+        .form-col,
+        .preview-panel {
+          min-height: 0;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+        }
+        .form-col {
+          padding: 26px 16px 48px;
+        }
+        .form-panel {
+          position: static;
+          box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
+        }
+        .preview-panel {
+          padding: 26px 0 48px;
+        }
+        /* Jangan biarkan kertas menyusut mengikuti tinggi kolom */
+        .preview-toolbar,
+        .paper-outer {
+          flex: none;
+        }
+      }
+
+      /* ---------- Mobile: tab Formulir/Pratinjau & tombol melayang ----------
+         Ditaruh setelah aturan dasar .tabs agar tidak tertimpa
+         (sebelumnya tab ini tidak pernah tampil di HP). */
+      .mobile-fab,
+      .paper-edit {
+        display: none;
+      }
+      @media (max-width: 960px) {
+        .tabs {
+          display: flex;
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          padding: 8px 0;
+          margin: -8px 0 0;
+          background: var(--ink);
+        }
+        .tabs button {
+          min-height: 44px;
+        }
+        .main {
+          padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+        }
+        .mobile-fab {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 10px;
+          position: fixed;
+          right: 16px;
+          bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+          z-index: 30;
+        }
+        .fab-btn {
+          min-height: 44px;
+          min-width: 44px;
+          padding: 0 16px;
+          border-radius: 22px;
+          border: none;
+          background: var(--maroon);
+          color: #fff;
+          font: inherit;
+          font-size: 14px;
+          font-weight: 700;
+          box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+          cursor: pointer;
+        }
+        .fab-btn.light {
+          background: #fff;
+          color: var(--maroon);
+        }
+        .fab-btn:focus-visible {
+          outline: 3px solid var(--gold);
+          outline-offset: 2px;
+        }
+        .fab-btn[hidden],
+        .fab-menu[hidden] {
+          display: none;
+        }
+        .fab-menu {
+          background: #fff;
+          border-radius: 14px;
+          padding: 6px;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+          display: flex;
+          flex-direction: column;
+          min-width: 160px;
+        }
+        .fab-menu button {
+          min-height: 44px;
+          border: none;
+          background: transparent;
+          text-align: left;
+          padding: 0 14px;
+          border-radius: 10px;
+          font: inherit;
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text);
+          cursor: pointer;
+        }
+        .fab-menu button.current {
+          background: rgba(139, 46, 53, 0.1);
+          color: var(--maroon);
+        }
+        /* Tombol per tab: hanya relevan di tab masing-masing */
+        body[data-mtab="preview"] #fabPage,
+        body[data-mtab="preview"] #fabPreview,
+        body[data-mtab="preview"] #fabMenu {
+          display: none;
+        }
+        .paper-label {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .paper-edit {
+          display: inline-flex;
+          align-items: center;
+          min-height: 40px;
+          padding: 0 16px;
+          border-radius: 20px;
+          border: none;
+          background: var(--maroon);
+          color: #fff;
+          font: inherit;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        /* Label ikut diskalakan bersama kertas; --ui-scale (= 1/skala, diisi
+           oleh scalePaper) menjaga ukuran di layar tetap terbaca & ≥44px */
+        .paper-stack .paper-label {
+          font-size: calc(13px * var(--ui-scale, 1));
+          margin-bottom: calc(8px * var(--ui-scale, 1));
+        }
+        .paper-edit {
+          font-size: calc(14px * var(--ui-scale, 1));
+          min-height: calc(44px * var(--ui-scale, 1));
+          padding: 0 calc(16px * var(--ui-scale, 1));
+          border-radius: calc(22px * var(--ui-scale, 1));
+        }
+      }
+
+      /* ---------- Modal konfirmasi hapus halaman ---------- */
+      .confirm-dialog {
+        border: none;
+        padding: 0;
+        border-radius: 16px;
+        width: min(420px, calc(100vw - 32px));
+        background: var(--panel);
+        color: var(--text);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+      }
+      .confirm-dialog::backdrop {
+        background: rgba(10, 18, 32, 0.62);
+      }
+      .confirm-dialog .dialog-body {
+        padding: 24px 24px 20px;
+      }
+      .confirm-dialog h2 {
+        margin: 0 0 8px;
+        font-size: 17px;
+      }
+      .confirm-dialog p {
+        margin: 0;
+        font-size: 13.5px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+      .confirm-dialog .del-client {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #fff;
+        border: 1.5px solid var(--border);
+        color: var(--text);
+        font-size: 13.5px;
+      }
+      .confirm-dialog .del-client strong {
+        font-weight: 700;
+      }
+      .confirm-dialog .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .confirm-dialog .dialog-actions button {
+        min-height: 44px;
+        min-width: 96px;
+      }
+      button.danger {
+        background: var(--maroon);
+        color: #fff;
+        border: none;
+        padding: 11px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 13.5px;
+        cursor: pointer;
+      }
+      button.danger:hover {
+        background: var(--maroon-dark);
+      }
+      .confirm-dialog button:focus-visible {
+        outline: 2px solid var(--maroon);
+        outline-offset: 2px;
+      }
+      @media (max-width: 480px) {
+        .confirm-dialog .dialog-actions button {
+          flex: 1;
+        }
+      }
+
       /* ---------- Multi halaman ---------- */
       .page-tabs {
         display: flex;
@@ -551,7 +795,10 @@
         .topbar,
         .main > div.form-col,
         .preview-toolbar,
-        .tabs {
+        .tabs,
+        .mobile-fab,
+        .paper-edit,
+        .confirm-dialog {
           display: none !important;
         }
         .main {
@@ -564,8 +811,19 @@
           height: auto !important;
           overflow: visible;
         }
+        html,
+        body {
+          height: auto !important;
+          overflow: visible !important;
+        }
+        body {
+          display: block !important;
+        }
         .preview-panel {
           display: block !important;
+          overflow: visible !important;
+          height: auto !important;
+          padding: 0 !important;
         }
         .paper-stack {
           width: auto;
@@ -770,6 +1028,26 @@
         </div>
       </div>
     </div>
+
+    <div class="mobile-fab" id="mobileFab">
+      <div class="fab-menu" id="fabMenu" role="menu" aria-label="Pilih surat" hidden></div>
+      <button type="button" class="fab-btn light" id="fabPage" aria-haspopup="menu" aria-expanded="false" aria-controls="fabMenu">
+        Surat 1 ▾
+      </button>
+      <button type="button" class="fab-btn" id="fabPreview">Pratinjau</button>
+    </div>
+
+    <dialog class="confirm-dialog" id="deleteDialog" aria-labelledby="delTitle" aria-describedby="delDesc">
+      <form method="dialog" class="dialog-body">
+        <h2 id="delTitle">Hapus surat?</h2>
+        <p id="delDesc">Semua isian di halaman ini akan hilang dan tidak bisa dikembalikan.</p>
+        <div class="del-client" id="delClient" hidden></div>
+        <div class="dialog-actions">
+          <button type="submit" value="cancel" class="secondary" id="delCancel" autofocus>Batal</button>
+          <button type="submit" value="confirm" class="danger" id="delConfirm">Hapus</button>
+        </div>
+      </form>
+    </dialog>
 
     <template id="paperTpl">
           <div class="paper">
@@ -1051,7 +1329,19 @@
         "atasanTtd",
       ];
 
-      // Nilai default awal (sama dengan nilai bawaan halaman pertama)
+      // Halaman baru (Surat 2 dst.): semua isian kosong, kecuali
+      // tanggal surat dibuat yang otomatis terisi tanggal hari ini.
+      // Prefiks nomor surat terisi sendiri saat jenis surat dipilih.
+      function emptyPage() {
+        const data = {};
+        FIELD_IDS.forEach((id) => {
+          data[id] = "";
+        });
+        data.tanggalDibuat = hariIni;
+        return data;
+      }
+
+      // Nilai default awal (khusus halaman pertama)
       function defaultPage() {
         return {
           namaPenugas: "Salshabilla Aliza Adif",
@@ -1140,6 +1430,19 @@
         wrap.className = "paper-wrap";
         const label = document.createElement("div");
         label.className = "paper-label";
+        const labelText = document.createElement("span");
+        labelText.className = "paper-label-text";
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "paper-edit";
+        edit.textContent = "✎ Isi";
+        edit.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const idx = Array.from(paperStack.children).indexOf(wrap);
+          if (idx !== -1) openFormFor(idx);
+        });
+        label.appendChild(labelText);
+        label.appendChild(edit);
         wrap.appendChild(label);
         wrap.appendChild(paperTpl.content.cloneNode(true));
         wrap.querySelector(".logo-img").src =
@@ -1154,8 +1457,10 @@
       function fillPaper(wrap, d, index) {
         const tanggal = formatTanggalPanjang(d.tanggal_raw, true);
         const tanggalDibuat = formatTanggalPanjang(d.tanggal_dibuat_raw, false);
-        wrap.querySelector(".paper-label").textContent =
+        wrap.querySelector(".paper-label-text").textContent =
           `Surat ${index + 1} dari ${pages.length}`;
+        const edit = wrap.querySelector(".paper-edit");
+        edit.setAttribute("aria-label", `Isi surat ${index + 1}`);
         wrap.classList.toggle("active", index === activePage);
 
         setFill(wrap, "pvNomor", d.nomor, "[nomor]");
@@ -1234,6 +1539,7 @@
           : "Tambah halaman surat baru";
         add.addEventListener("click", addPage);
         bar.appendChild(add);
+        renderFab();
       }
 
       function updatePreview() {
@@ -1256,11 +1562,23 @@
         renderPageTabs();
         renderPreview();
         setStatus("", false);
-        // Gulir pratinjau ke halaman yang dibuka (hanya bila pratinjau terlihat)
+        scrollPreviewTo(index);
+      }
+
+      // Gulir HANYA kolom pratinjau ke kertas halaman tertentu.
+      // Jendela dan kolom formulir tidak ikut bergulir.
+      function scrollPreviewTo(index) {
+        const col = document.getElementById("previewCol");
         const wrap = paperStack.children[index];
-        if (wrap && wrap.getBoundingClientRect().height > 0) {
-          wrap.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
+        if (!col || !wrap) return;
+        if (col.scrollHeight <= col.clientHeight) return; // bukan mode desktop
+        const top =
+          wrap.getBoundingClientRect().top -
+          col.getBoundingClientRect().top +
+          col.scrollTop -
+          12;
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        col.scrollTo({ top: Math.max(0, top), behavior: reduce ? "auto" : "smooth" });
       }
 
       function addPage() {
@@ -1268,21 +1586,77 @@
           setStatus(`Maksimal ${MAX_PAGES} halaman per unduhan.`, true);
           return;
         }
+        // Tambah halaman baru lalu langsung buka halaman tersebut.
+        // Isian kosong kecuali tanggal surat dibuat (lihat emptyPage()).
+        // switchPage() juga menggulir pratinjau ke kertas baru (desktop).
         saveActivePage();
-        pages.push(defaultPage());
+        pages.push(emptyPage());
         switchPage(pages.length - 1);
         setStatus(`Surat ${pages.length} ditambahkan.`, false);
       }
 
+      /* ---- Hapus halaman dengan modal konfirmasi ---- */
+      const deleteDialog = document.getElementById("deleteDialog");
+      let pendingDelete = -1;
+
       function removePage(index) {
         if (index === 0 || index >= pages.length) return;
-        if (!confirm(`Hapus surat ${index + 1}? Isiannya akan hilang.`)) return;
         saveActivePage();
+        pendingDelete = index;
+        const n = index + 1;
+        document.getElementById("delTitle").textContent = `Hapus Surat ${n}?`;
+        document.getElementById("delDesc").textContent =
+          `Semua isian di Surat ${n} akan hilang dan tidak bisa dikembalikan.`;
+        const client = String(pages[index].namaClient || "").trim();
+        const box = document.getElementById("delClient");
+        box.hidden = !client;
+        box.innerHTML = "";
+        if (client) {
+          box.append("Nama klien: ");
+          const b = document.createElement("strong");
+          b.textContent = client;
+          box.appendChild(b);
+        }
+        deleteDialog.returnValue = "";
+        if (typeof deleteDialog.showModal === "function") {
+          deleteDialog.showModal();
+          document.getElementById("delCancel").focus();
+        } else if (confirm(`Hapus Surat ${n}? Isiannya akan hilang.`)) {
+          // Cadangan untuk browser lama tanpa <dialog>
+          confirmRemove(index);
+        }
+      }
+
+      // Ketuk area gelap di luar kotak = Batal
+      deleteDialog.addEventListener("click", (e) => {
+        if (e.target === deleteDialog) deleteDialog.close("cancel");
+      });
+
+      deleteDialog.addEventListener("close", () => {
+        const index = pendingDelete;
+        pendingDelete = -1;
+        if (deleteDialog.returnValue === "confirm" && index > 0) {
+          confirmRemove(index);
+        } else {
+          const tab = document.querySelectorAll("#pageTabs .page-tab button")[0];
+          const close = document.querySelectorAll("#pageTabs .page-tab")[index];
+          const back = close && close.querySelector(".close");
+          (back || tab) && (back || tab).focus({ preventScroll: true });
+        }
+      });
+
+      // Setelah dikonfirmasi: buka halaman sebelum yang dihapus,
+      // pratinjau bergulir ke kertasnya (seperti saat menambah halaman).
+      function confirmRemove(index) {
+        if (index <= 0 || index >= pages.length) return;
         pages.splice(index, 1);
-        if (activePage >= index) activePage = Math.max(0, activePage - 1);
+        activePage = index - 1;
         loadPageIntoForm(activePage);
         renderPageTabs();
         renderPreview();
+        scrollPreviewTo(activePage);
+        const tabBtn = document.querySelectorAll("#pageTabs .page-tab")[activePage];
+        if (tabBtn) tabBtn.querySelector("button").focus({ preventScroll: true });
         setStatus(`Surat ${index + 1} dihapus.`, false);
       }
 
@@ -1306,6 +1680,7 @@
           scale = available / naturalWidth;
         }
         paperStack.style.transform = `scale(${scale})`;
+        paperStack.style.setProperty("--ui-scale", String(1 / scale));
         outer.style.height = paperStack.getBoundingClientRect().height + "px";
         document.getElementById("zoomLabel").textContent =
           scale < 1 ? Math.round(scale * 100) + "% tampilan" : "";
@@ -1481,7 +1856,7 @@
 
       // Hanya mengosongkan halaman yang sedang aktif (kembali ke default awal)
       document.getElementById("btnReset").addEventListener("click", () => {
-        pages[activePage] = defaultPage();
+        pages[activePage] = activePage === 0 ? defaultPage() : emptyPage();
         loadPageIntoForm(activePage);
         renderPageTabs();
         renderPreview();
@@ -1495,19 +1870,106 @@
       const tabPreviewBtn = document.getElementById("tabPreviewBtn");
       const formCol = document.getElementById("formCol");
       const previewCol = document.getElementById("previewCol");
-      tabFormBtn.addEventListener("click", () => {
+      const fabMenu = document.getElementById("fabMenu");
+      const fabPage = document.getElementById("fabPage");
+      const fabPreview = document.getElementById("fabPreview");
+
+      function scrollWindowTo(top) {
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        window.scrollTo({ top: Math.max(0, top), behavior: reduce ? "auto" : "smooth" });
+      }
+
+      function showFormTab() {
         tabFormBtn.classList.add("active");
         tabPreviewBtn.classList.remove("active");
         formCol.classList.remove("panel-hidden-mobile");
         previewCol.classList.add("panel-hidden-mobile");
-      });
-      tabPreviewBtn.addEventListener("click", () => {
+        document.body.dataset.mtab = "form";
+      }
+
+      function showPreviewTab() {
         tabPreviewBtn.classList.add("active");
         tabFormBtn.classList.remove("active");
         previewCol.classList.remove("panel-hidden-mobile");
         formCol.classList.add("panel-hidden-mobile");
+        document.body.dataset.mtab = "preview";
+        closeFabMenu();
+        scalePaper();
+      }
+
+      tabFormBtn.addEventListener("click", showFormTab);
+      tabPreviewBtn.addEventListener("click", () => {
+        showPreviewTab();
         setTimeout(scalePaper, 0);
       });
+
+      // Tombol "Pratinjau": buka tab Pratinjau tepat di kertas surat aktif
+      fabPreview.addEventListener("click", () => {
+        showPreviewTab();
+        requestAnimationFrame(() => {
+          const wrap = paperStack.children[activePage];
+          if (!wrap) return;
+          const tabsH = document.querySelector(".tabs").offsetHeight || 0;
+          scrollWindowTo(wrap.getBoundingClientRect().top + window.scrollY - tabsH - 8);
+        });
+      });
+
+      // Buka formulir surat tertentu dan gulir ke atas formulir
+      function openFormFor(index) {
+        closeFabMenu();
+        showFormTab();
+        if (index !== activePage) switchPage(index);
+        scrollWindowTo(0);
+      }
+
+      function renderFab() {
+        fabPage.textContent = `Surat ${activePage + 1} ▾`;
+        fabPage.setAttribute("aria-label", `Pilih surat, sekarang Surat ${activePage + 1}`);
+        // Menu pilih surat hanya berguna bila ada lebih dari satu surat
+        fabPage.hidden = pages.length < 2;
+        fabMenu.innerHTML = "";
+        pages.forEach((data, i) => {
+          const item = document.createElement("button");
+          item.type = "button";
+          item.setAttribute("role", "menuitem");
+          item.textContent =
+            `Surat ${i + 1}` + (isPageComplete(data) ? "" : " (belum lengkap)");
+          item.classList.toggle("current", i === activePage);
+          item.addEventListener("click", () => openFormFor(i));
+          fabMenu.appendChild(item);
+        });
+        if (pages.length < 2) closeFabMenu();
+      }
+
+      function openFabMenu() {
+        renderFab();
+        fabMenu.hidden = false;
+        fabPage.setAttribute("aria-expanded", "true");
+        const cur = fabMenu.querySelector("button.current");
+        if (cur) cur.focus();
+      }
+
+      function closeFabMenu() {
+        fabMenu.hidden = true;
+        fabPage.setAttribute("aria-expanded", "false");
+      }
+
+      fabPage.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (fabMenu.hidden) openFabMenu();
+        else closeFabMenu();
+      });
+      document.addEventListener("click", (e) => {
+        if (!fabMenu.hidden && !fabMenu.contains(e.target)) closeFabMenu();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !fabMenu.hidden) {
+          closeFabMenu();
+          fabPage.focus();
+        }
+      });
+
+      document.body.dataset.mtab = "form";
 
       /* =========================================================
    8. Init
